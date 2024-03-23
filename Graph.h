@@ -28,8 +28,9 @@ struct Edge
 typedef struct Path
 {
 	int vexs[20]; //保存一条路径
-	Path* next; //下一条路径
-}*PathList;
+	Path* next=NULL; //下一条路径
+};
+typedef Path* PathList;
 
 class Graph
 {
@@ -44,10 +45,12 @@ public:
 	}
 	int FindEdge(int v, Edge aEdge[]);//查找边
 
-	void DFS(int nVex, bool bVisited[], int& nIndex, PathList& pList);
+	void DFS(int nVex, bool bVisited[], int& nIndex, PathList pNow);
 	void DFSTraverse(int nVex, PathList& pList);
-
-
+	void PrintPath(const PathList pList);
+	
+	void FindShortPath(int origin, int dest, Edge*& aPath);
+	void FindMinTree(int begin, Edge*& aPath);
 private:
 	int m_aAdjMatrix[20][20];//邻接矩阵
 	Vex m_aVexs[20];//顶点信息矩阵

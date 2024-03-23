@@ -72,6 +72,7 @@ void Tourism::GetSpotInfo()
 		}
 	}
 	delete[] medge;
+	medge = NULL;
 }
 
 
@@ -97,7 +98,9 @@ void Tourism::TravelPath()
 		tem = pList;
 		pList = pList->next;
 		delete tem;
+		
 	}
+	pList = NULL;
 
 }
 
@@ -145,4 +148,32 @@ void Tourism::FindShortPath(void)
 
 	delete[] aPath;
 	delete[] path;
+	aPath =  NULL;
+	path = NULL;
+}
+
+void Tourism::DesignPath()
+{
+	cout << "*******铺设电路规划*******" << endl;
+	if (!g.ShowGraph())
+	{
+		return;
+	}
+	int begin;
+	cout << "请输入铺设起点>";
+	cin >> begin;
+	Edge* aPath = new Edge[g.GetNum()];
+	g.FindMinTree(begin, aPath);
+	/*for (int i = 0; i < 6; i++)
+	{
+		cout << aPath[i].vex1 << "-" << aPath[i].vex2 << " ";
+	}*/
+	for (int i = 0; i < g.GetNum(); i++)
+	{
+		if (i == begin) continue;
+		cout << g.GetVex(aPath[i].vex1).name << " - " << g.GetVex(aPath[i].vex2).name << "\t" << aPath[i].weight << "m" << endl;
+	}
+
+	delete[] aPath;
+	aPath = NULL;
 }

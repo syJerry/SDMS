@@ -7,7 +7,8 @@ public:
 	void CreateGraph(string Vfilename, string Efilename);
 	void GetSpotInfo();
 	void TravelPath();
-
+	void FindShortPath();
+	void DesignPath();
 private:
 	Graph g;
 };

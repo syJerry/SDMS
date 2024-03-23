@@ -111,22 +111,207 @@ int Graph::FindEdge(int v, Edge aEdge[])
 
 }
 
-void Graph::DFS(int nVex, bool bVisited[], int& nIndex, PathList& pList)
+bool IsAllVisted(const int nNum,const bool bVisited[])
 {
-	bVisited[nVex] = true; // 改为已访问
-	pList->vexs[nIndex++] = nVex; //访问顶点 nVex
-	for (int i = 0; i < m_nVexNum;i++) //搜索 v 的所有邻接点
+	for (int i = 0; i < nNum; i++)
 	{
-		if (m_aAdjMatrix[nVex][i]!=0 && !bVisited[i])
+		if (bVisited[i] == false)
 		{
-			DFS(i, bVisited, nIndex, pList); //递归调用 DFS
+			return 0;
 		}
 	}
+	return true;
+}
+
+void Graph::PrintPath(const PathList pList)
+{
+	PathList pNow = pList;
+	int j = 1;
+	while (pNow != NULL)
+	{
+		cout << "线路" << j++ << ": ";
+		for (int i = 0; i < m_nVexNum; i++)
+		{
+			cout << m_aVexs[pNow->vexs[i]].name;
+			if (i != m_nVexNum - 1)
+				cout << "->";
+			else
+				cout << endl;
+		}
+		pNow = pNow->next;
+	}
+}
+
+void Graph::DFS(int nVex, bool bVisited[], int& nIndex, PathList pNow)
+{
+	/*
+	功能：深度优先搜索
+	参数：nVex：起点坐标；
+		bVisted[]：已访问标志
+		nIdex：路径位置索引
+		pList：路径信息
+	*/
+	bVisited[nVex] = true; // 改为已访问
+	pNow->vexs[nIndex++] = nVex; //访问顶点 nVex
+	if (IsAllVisted(m_nVexNum, bVisited))
+	{
+		PathList pTem = new Path(*pNow);
+		pNow->next = pTem;
+		pNow = pTem;
+	}
+	else
+	{
+		for (int i = 0; i < m_nVexNum; i++) //搜索 v 的所有邻接点
+		{
+			if (m_aAdjMatrix[nVex][i] != 0 && !bVisited[i])
+			{
+				DFS(i, bVisited, nIndex, pNow); //递归调用 DFS
+				bVisited[i] = false;
+				nIndex--;
+			}
+		}
+	}
+
 }
 
 void Graph::DFSTraverse(int nVex, PathList& pList)
 {
 	int nIndex = 0;
 	bool aVisited[MAX_VERTEX_NUM] = { false };
-	DFS(nVex, aVisited, nIndex, pList);
+	PathList pNow=pList;
+	DFS(nVex, aVisited, nIndex, pNow);
+	pNow = pList;
+	pList = pList->next;
+	PrintPath(pList);
+
+	delete pNow;
+	pNow = NULL;
+}
+
+void Graph::FindShortPath(int origin, int dest, Edge* &aPath)
+{
+	int* path_dest = new int[m_nVexNum];//存储距离orgin的距离
+	int* short_path_dest = new int[m_nVexNum];//已找到的最小距离
+	int* vex_visted = new int[m_nVexNum];
+	if (vex_visted == NULL || path_dest == NULL || short_path_dest == NULL)
+	{
+		cout << "内存开辟失败" << endl;
+		return;
+	}
+	for (int i = 0; i < m_nVexNum; i++)
+	{
+		path_dest[i] = INT_MAX;
+		vex_visted[i] = false;
+		short_path_dest[i] = 0;
+	}
+
+
+	int pos = origin;
+	int min_dest = INT_MAX;
+	int min_node=-1;
+	int pre_dest = 0;
+
+	vex_visted[origin] = true;
+	for (int i = 0; i < m_nVexNum; i++)
+	{
+		min_dest = INT_MAX;
+		min_node = -1;
+		//更新相邻点的距离，若小于则path_dest[]更新
+		for (int j = 0; j < m_nVexNum; j++)
+		{
+			if (m_aAdjMatrix[pos][j] != 0 && vex_visted[j] == false)
+			{
+				if (path_dest[j] > m_aAdjMatrix[pos][j]+pre_dest)
+				{
+					aPath[j].vex1 = pos;
+					path_dest[j] = m_aAdjMatrix[pos][j]+pre_dest;
+				}
+			}
+		}
+		//找到path_dest[]中距离最小的节点
+		for (int j = 0; j < m_nVexNum; j++)
+		{
+			if (path_dest[j] < min_dest && vex_visted[j] == false)
+			{
+				min_dest = path_dest[j];
+				min_node = j;
+			}
+		}
+
+		if (min_node == -1)
+			break;
+
+
+		short_path_dest[min_node] = min_dest;
+		vex_visted[min_node] = true;
+
+		aPath[min_node].vex2 = min_node;
+		aPath[min_node].weight = min_dest;
+		pre_dest = min_dest;
+		pos = min_node;
+
+	}
+
+	/*for (int j = 0; j < m_nVexNum; j++)
+		cout << short_path_dest[j] << " ";*/
+
+	delete[] vex_visted;
+	delete[] path_dest;
+	delete[] short_path_dest;
+	vex_visted = path_dest = short_path_dest = NULL;
+}
+
+void Graph::FindMinTree(int begin,Edge* &aPath)
+{
+	int* min_tree_node = new int[m_nVexNum];
+	int* dest2tree = new int[m_nVexNum];
+	for (int i = 0; i < m_nVexNum; i++)
+	{
+		min_tree_node[i] = 0;
+		dest2tree[i] = INT_MAX;
+	}
+
+	min_tree_node[begin] = 1;
+	dest2tree[begin] = 0;
+
+	int node = begin;//最新加入树的节点
+	int minnode = begin;
+	int mindest = 0;
+	for (int i = 0; i < m_nVexNum - 1; i++)
+	{
+		minnode = -1;
+		mindest = INT_MAX;
+		//更新与最小生成树的距离
+		for (int j = 0; j < m_nVexNum; j++)
+		{
+			if (min_tree_node[j] == 0 && m_aAdjMatrix[node][j] != 0)
+			{
+				if (m_aAdjMatrix[node][j] < dest2tree[j])
+				{
+					aPath[j].vex1 = node;
+					dest2tree[j] = m_aAdjMatrix[node][j];
+				}
+			}
+		}
+		//找到与最小生成树相连的节点
+		for (int j = 0; j < m_nVexNum; j++)
+		{
+			if (min_tree_node[j] == 0 && mindest > dest2tree[j])
+			{
+				mindest = dest2tree[j];
+				minnode = j;
+			}
+		}
+
+		if (minnode != -1)
+		{
+			node = minnode;
+			min_tree_node[minnode] = 1;
+			aPath[minnode].vex2 = minnode;
+			aPath[minnode].weight = mindest;
+		}
+	}
+	delete[] min_tree_node;
+	delete[] dest2tree;
+	min_tree_node = dest2tree = NULL;
 }
